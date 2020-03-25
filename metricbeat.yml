@@ -1,0 +1,65 @@
+metricbeat.config.modules:
+  reload.period: 10s
+  reload.enabled: true
+
+metricbeat.modules:
+
+# System metrics
+- module: system
+  metricsets:
+    - core              # Per CPU core usage
+    - cpu               # CPU usage
+    - diskio            # Disk IO
+    - filesystem        # File system usage for each mountpoint
+    - fsstat            # File system summary metrics
+    - load              # CPU load averages
+    - memory            # Memory usage
+    - network           # Network IO
+    - process           # Per process metrics
+    - process_summary   # Process summary
+    - raid              # Raid
+    - socket            # Sockets and connection info (linux only)
+  enabled: true
+  period: 10s
+  # Configure the metric types that are included by these metricsets.
+  cpu.metrics: ["percentages"]  # The other available options are normalized_percentages and ticks.
+  core.metrics: ["percentages"] # The other available option is ticks.
+  processes: ['.*']
+  # Enable collection of cgroup metrics from processes on Linux.
+  process.cgroups.enabled: true  
+
+# Docker metrics
+- module: docker
+  metricsets:
+    - "container"
+    - "cpu"
+    - "diskio"
+    - "healthcheck"
+    - "info"
+    - "image"
+    - "memory"
+    - "network"
+  hosts: ["unix:///var/run/docker.sock"]
+  period: 10s
+  enabled: true  
+
+logging.to_files: false
+
+setup.dashboards.enabled: true
+setup.dashboards.beat: ''
+setup.dashboards.kibana_index: '.kibana'
+setup.dashboards.always_kibana: true
+setup.dashboards.retry.enabled: true
+setup.template.enabled: true
+setup.template.overwrite: true
+
+output.elasticsearch:
+  enabled: true 
+  hosts: ["elastic-search:9200"]
+  username: elastic
+  password: **elastic-password**
+
+setup.kibana:
+  host: "kibana:5601"
+  username: elastic
+  password: **elastic-password**  

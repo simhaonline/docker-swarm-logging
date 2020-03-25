@@ -1,0 +1,24 @@
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /host/var/lib/docker/containers/*/*.log
+
+processors:
+- add_docker_metadata:
+    host: "unix:///var/run/docker.sock"
+
+filebeat.modules:
+- module: system
+  syslog:
+    enabled: true
+    var.paths: ["/host/var/log/syslog*"]
+    var.convert_timezone: true
+  auth:
+    enabled: true
+    var.paths: ["/host/var/log/auth.log*"]
+    var.convert_timezone: true
+
+output.logstash:
+  enabled: true
+  hosts: ["logstash:5044"]

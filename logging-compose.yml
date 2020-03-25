@@ -1,0 +1,80 @@
+version: '3.3'
+
+configs:
+  logstash.conf:
+    file: /docker/configs/logstash/logstash.conf
+  filebeat.yml:
+    file: /docker/configs/filebeat/filebeat.yml   
+#  metricbeat.yml:
+#    file: ./metricbeat.yml
+
+networks:
+  logging-net:
+    external: true
+
+volumes:
+  logstashpipeline:
+  filebeat-data:
+#  metricbeat-data:
+   
+services:
+
+  logstash:
+    image: logstash:7.5.1
+    hostname: logstash
+#    environment:
+#      - 'path.config=/usr/share/logstash/conf/logstash.conf'
+#      - 'xpack.monitoring.elasticsearch.url=http://elastic-search:9200'
+#      - 'xpack.monitoring.enabled=true'
+#      - 'xpack.monitoring.elasticsearch.username=elastic'
+#      - 'xpack.monitoring.elasticsearch.password=**elastic-password**'      
+    configs:
+      - source: logstash.conf
+        target: /usr/share/logstash/conf/logstash.conf
+    deploy:
+      placement:
+        constraints:
+          - "node.role==manager"
+    networks:
+      - logging-net       
+    ports:
+      - "5044:5044"      # Port 5044 is used for listening to Filebeat traffic
+    volumes:
+      - logstashpipeline:/usr/share/logstash/pipeline/
+      - /var/log/docker:/logs
+
+  filebeat:
+    image: filebeat:7.5.1
+    user: root
+    deploy:
+      mode: global    
+    configs:
+      - source: filebeat.yml
+        target: /usr/share/filebeat/filebeat.yml  
+    networks:
+      - logging-net     
+    volumes:
+      - filebeat-data:/usr/share/filebeat/data/
+      - /var/log/:/host/var/log/:ro
+      - /var/lib/docker/containers:/host/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+#  metricbeat:
+#    image: store/elastic/metricbeat:6.5.0
+#    user: root
+#    deploy:
+#      mode: global
+#      placement:
+#        constraints: [node.platform.os == linux] 
+#    configs:
+#      - source: metricbeat.yml
+#        target: /usr/share/metricbeat/metricbeat.yml  
+#    command: metricbeat -e -system.hostfs=/hostfs    
+#    networks:
+#      - logging-net     
+#    volumes:
+#      - metricbeat-data:/usr/share/metricbeat/data/
+#      - /proc:/hostfs/proc:ro
+#      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - /:/hostfs:ro
